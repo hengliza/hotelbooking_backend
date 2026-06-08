@@ -9,6 +9,7 @@ public record ReservationRequest(
     Timestamp checkoutDate,
     Integer adultAmount,
     Integer childAmount,
+    String status,
     String roomNumber
 ) {
 }
