@@ -3,7 +3,9 @@ package com.example.demo.mapper;
 import com.example.demo.domain.User;
 import com.example.demo.dto.UserRequest;
 import com.example.demo.dto.UserResponse;
+import org.springframework.stereotype.Component;
 
+@Component
 public class UserMapper {
 
     public static UserResponse toResponse(User user) {
