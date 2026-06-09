@@ -9,6 +9,9 @@ import com.example.demo.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImplement implements UserService {
@@ -40,5 +43,11 @@ public class UserServiceImplement implements UserService {
         User existedUser = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with this id"+ id));
 
         return userMapper.toResponse(existedUser);
+    }
+
+    @Override
+    public List<UserResponse> getAllUsers() {
+        List<User> users = userRepository.findAll();
+        return users.stream().map(userMapper::toResponse).collect(Collectors.toList());
     }
 }

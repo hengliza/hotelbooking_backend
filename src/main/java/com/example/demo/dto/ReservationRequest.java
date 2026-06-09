@@ -10,6 +10,7 @@ public record ReservationRequest(
     Integer adultAmount,
     Integer childAmount,
     String status,
-    String roomNumber
+    Integer roomId,
+    Integer userId
 ) {
 }

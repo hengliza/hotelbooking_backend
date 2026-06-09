@@ -9,5 +9,6 @@ public interface ReservationService {
     ReservationResponse createReservation(ReservationRequest reservationRequest);
     List<ReservationResponse> getAllReservations();
     List<ReservationResponse> getReservationsByUserId(Integer userId);
-    ReservationResponse updateReservation(Integer id, String status);
+    ReservationResponse updateReservationStatus(Integer id, String status);
+    void cancelReservation(Integer id);
 }

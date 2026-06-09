@@ -8,6 +8,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
@@ -20,6 +22,11 @@ public class UserController {
     @PatchMapping("/updateUser/{id}")
     public UserResponse updateUser(@PathVariable Integer id,@Valid @RequestBody UserRequest userRequest) {
         return userService.updateUser(id,userRequest);
+    }
+
+    @GetMapping
+    public List<UserResponse> getAllUsers() {
+        return userService.getAllUsers();
     }
 
     @DeleteMapping("/{id}")
