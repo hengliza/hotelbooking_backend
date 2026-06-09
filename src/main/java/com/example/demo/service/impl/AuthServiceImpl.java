@@ -15,9 +15,11 @@ import java.util.Optional;
 @Service
 public class AuthServiceImpl implements AuthService {
     private final UserRepository userRepository;
+    private final UserMapper userMapper;
 
-    public AuthServiceImpl(UserRepository userRepository) {
+    public AuthServiceImpl(UserRepository userRepository, UserMapper userMapper) {
         this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
     @Transactional
@@ -37,10 +39,10 @@ public class AuthServiceImpl implements AuthService {
                 throw new IllegalStateException("This phone number is already registered.");
             }
 
-            User user = UserMapper.toEntity(userRequest);
+            User user = userMapper.toEntity(userRequest);
             user.setAuthProvider("LOCAL");
 
-            return UserMapper.toResponse(userRepository.save(user));
+            return userMapper.toResponse(userRepository.save(user));
 
         } else if ("GOOGLE".equals(provider)) {
             // Google Validation
@@ -51,11 +53,11 @@ public class AuthServiceImpl implements AuthService {
                 throw new IllegalStateException("This Google account is already registered.");
             }
 
-            User user = UserMapper.toEntity(userRequest);
+            User user = userMapper.toEntity(userRequest);
             user.setAuthProvider("GOOGLE");
             user.setPassword(null);
 
-            return UserMapper.toResponse(userRepository.save(user));
+            return userMapper.toResponse(userRepository.save(user));
         }
 
         throw new IllegalArgumentException("Unknown Authentication Provider: " + provider);
@@ -81,7 +83,7 @@ public class AuthServiceImpl implements AuthService {
                 throw new RuntimeException("Invalid phone number or password.");
             }
 
-            return UserMapper.toResponse(user);
+            return userMapper.toResponse(user);
 
         } else if ("GOOGLE".equals(provider)) {
             Optional<User> existingUser = userRepository.findByEmail(authRequest.email());
@@ -91,14 +93,14 @@ public class AuthServiceImpl implements AuthService {
                 if (!"GOOGLE".equals(user.getAuthProvider())) {
                     throw new IllegalStateException("Email already linked to a standard profile. Log in via form.");
                 }
-                return UserMapper.toResponse(user);
+                return userMapper.toResponse(user);
             } else {
                 User newUser = new User();
                 newUser.setUsername(authRequest.email().split("@")[0]);
                 newUser.setEmail(authRequest.email());
                 newUser.setAuthProvider("GOOGLE");
 
-                return UserMapper.toResponse(userRepository.save(newUser));
+                return userMapper.toResponse(userRepository.save(newUser));
             }
         }
 

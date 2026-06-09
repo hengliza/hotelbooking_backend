@@ -5,11 +5,11 @@ import com.example.demo.dto.UserRequest;
 import com.example.demo.dto.UserResponse;
 import com.example.demo.service.AuthService;
 import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/api/v1")
 public class AuthController {
 
     private final AuthService authService;
@@ -19,14 +19,14 @@ public class AuthController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRequest userRequest) {
-        UserResponse response = authService.registerUser(userRequest);
-        return ResponseEntity.ok(response);
+    @ResponseStatus(HttpStatus.CREATED)
+    public UserResponse register(@Valid @RequestBody UserRequest userRequest) {
+        return authService.registerUser(userRequest);
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserResponse> login(@Valid @RequestBody AuthRequest authRequest) {
-        UserResponse response = authService.loginUser(authRequest);
-        return ResponseEntity.ok(response);
+    @ResponseStatus(HttpStatus.OK)
+    public UserResponse login(@Valid @RequestBody AuthRequest authRequest) {
+        return authService.loginUser(authRequest);
     }
 }
