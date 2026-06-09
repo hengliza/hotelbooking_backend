@@ -4,6 +4,7 @@ import com.example.demo.domain.RoomType;
 
 public record RoomRequest(
         String roomNumber,
-        String roomType
+        Integer roomTypeId,
+        String status
 ) {
 }

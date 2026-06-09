@@ -4,6 +4,7 @@ import com.example.demo.domain.Room;
 import com.example.demo.domain.RoomType;
 import com.example.demo.dto.RoomRequest;
 import com.example.demo.dto.RoomResponse;
+import com.example.demo.dto.RoomTypeRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 

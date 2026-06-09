@@ -9,6 +9,6 @@ public interface RoomService {
     RoomResponse createRoom(RoomRequest roomRequest);
     List<RoomResponse> getAllRooms();
     RoomResponse getRoomByNumber(String number);
-    RoomResponse updateRoom(RoomRequest roomRequest);
+    RoomResponse updateRoom(Integer id,RoomRequest roomRequest);
     void deleteRoom(String number);
 }
