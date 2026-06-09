@@ -63,11 +63,11 @@ jobs:
           script: |
             IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/hotel-booking-backend
 
-            docker pull $IMAGE_NAME:latest
+            sudo docker pull $IMAGE_NAME:latest
 
-            docker rm -f spring-backend || true
+            sudo docker rm -f spring-backend || true
 
-            docker run -d \
+            sudo docker run -d \
               --name spring-backend \
               --network web \
               -l traefik.enable=true \
