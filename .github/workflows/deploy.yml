@@ -1,0 +1,77 @@
+name: Deploy Spring Boot Backend
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/hotel-booking-backend
+
+jobs:
+  test-and-deploy:
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:latest
+        env:
+          POSTGRES_DB: hotelbooking
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: qwer
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+          
+      - name: Run Tests
+        run: mvn -B test --file pom.xml
+
+      - name: Login Docker Hub
+        run: |
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login \
+            -u "${{ secrets.DOCKERHUB_USERNAME }}" \
+            --password-stdin
+
+      - name: Build Image
+        run: |
+          docker build -t $IMAGE_NAME:latest .
+
+      - name: Push Image
+        run: |
+          docker push $IMAGE_NAME:latest
+
+      - name: Deploy Server
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/hotel-booking-backend
+
+            sudo docker pull $IMAGE_NAME:latest
+
+            sudo docker rm -f spring-backend || true
+
+            sudo docker run -d \
+              --name spring-backend \
+              --network web \
+              -l traefik.enable=true \
+              -l traefik.http.routers.spring.rule="Host(\`api-hotel-booking.molika.app\`)" \
+              -l traefik.http.routers.spring.entrypoints=websecure \
+              -l traefik.http.routers.spring.tls.certresolver=le \
+              $IMAGE_NAME:latest
