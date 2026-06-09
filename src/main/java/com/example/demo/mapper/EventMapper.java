@@ -3,11 +3,14 @@ package com.example.demo.mapper;
 import com.example.demo.domain.Event;
 import com.example.demo.dto.EventRequest;
 import com.example.demo.dto.EventResponse;
+import org.springframework.stereotype.Component;
+
 import java.sql.Timestamp;
 
+@Component
 public class EventMapper {
 
-    public static EventResponse toResponse(Event event) {
+    public EventResponse toResponse(Event event) {
         if (event == null) return null;
         return new EventResponse(
                 event.getTitle(),
@@ -18,7 +21,7 @@ public class EventMapper {
         );
     }
 
-    public static Event toEntity(EventRequest request) {
+    public Event toEntity(EventRequest request) {
         if (request == null) return null;
         Event event = new Event();
         event.setTitle(request.title());

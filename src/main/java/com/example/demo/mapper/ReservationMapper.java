@@ -5,11 +5,17 @@ import com.example.demo.domain.Room;
 import com.example.demo.domain.User;
 import com.example.demo.dto.ReservationRequest;
 import com.example.demo.dto.ReservationResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
+
 import java.sql.Timestamp;
 
+@Component
+@RequiredArgsConstructor
 public class ReservationMapper {
+    private final RoomMapper roomMapper;
 
-    public static ReservationResponse toResponse(Reservation reservation) {
+    public ReservationResponse toResponse(Reservation reservation) {
         if (reservation == null) return null;
         return new ReservationResponse(
                 reservation.getCheckinDate(),
@@ -18,11 +24,11 @@ public class ReservationMapper {
                 reservation.getChildAmount(),
                 reservation.getStatus(),
                 reservation.getCreatedDate(),
-                RoomMapper.toResponse(reservation.getRoom())
+                roomMapper.toResponse(reservation.getRoom())
         );
     }
 
-    public static Reservation toEntity(ReservationRequest request, Room room, User user) {
+    public Reservation toEntity(ReservationRequest request, Room room, User user) {
         if (request == null) return null;
         Reservation reservation = new Reservation();
         reservation.setCheckinDate(request.checkinDate());

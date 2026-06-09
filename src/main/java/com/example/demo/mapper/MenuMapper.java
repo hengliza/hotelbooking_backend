@@ -4,10 +4,15 @@ import com.example.demo.domain.Category;
 import com.example.demo.domain.Menu;
 import com.example.demo.dto.MenuRequest;
 import com.example.demo.dto.MenuResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
+@Component
+@RequiredArgsConstructor
 public class MenuMapper {
+    private final CategoryMapper categoryMapper;
 
-    public static MenuResponse toResponse(Menu menu) {
+    public MenuResponse toResponse(Menu menu) {
         if (menu == null) return null;
         return new MenuResponse(
                 menu.getName(),
@@ -15,11 +20,11 @@ public class MenuMapper {
                 menu.getIngredients(),
                 menu.getPrice(),
                 menu.getIsAvailable(),
-                CategoryMapper.toResponse(menu.getCategory())
+                categoryMapper.toResponse(menu.getCategory())
         );
     }
 
-    public static Menu toEntity(MenuRequest request, Category category) {
+    public Menu toEntity(MenuRequest request, Category category) {
         if (request == null) return null;
         Menu menu = new Menu();
         menu.setName(request.name());

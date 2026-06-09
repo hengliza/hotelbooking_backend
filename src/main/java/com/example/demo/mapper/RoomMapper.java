@@ -4,20 +4,27 @@ import com.example.demo.domain.Room;
 import com.example.demo.domain.RoomType;
 import com.example.demo.dto.RoomRequest;
 import com.example.demo.dto.RoomResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Component;
 
+@Component
+@RequiredArgsConstructor
 public class RoomMapper {
+    private final RoomTypeMapper roomTypeMapper;
 
-    public static RoomResponse toResponse(Room room) {
+    public RoomResponse toResponse(Room room) {
         if (room == null) return null;
+
         return new RoomResponse(
                 room.getRoomNumber(),
-                RoomTypeMapper.toResponse(room.getRoomType()), // Safe nested conversion
+                roomTypeMapper.toResponse(room.getRoomType()),
                 room.getStatus()
         );
     }
 
-    public static Room toEntity(RoomRequest request, RoomType roomType) {
+    public Room toEntity(RoomRequest request, RoomType roomType) {
         if (request == null) return null;
+
         Room room = new Room();
         room.setRoomNumber(request.roomNumber());
         room.setRoomType(roomType);

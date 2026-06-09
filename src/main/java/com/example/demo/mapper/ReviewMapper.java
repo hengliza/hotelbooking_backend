@@ -5,11 +5,14 @@ import com.example.demo.domain.RoomType;
 import com.example.demo.domain.User;
 import com.example.demo.dto.ReviewRequest;
 import com.example.demo.dto.ReviewResponse;
+import org.springframework.stereotype.Component;
+
 import java.sql.Timestamp;
 
+@Component
 public class ReviewMapper {
 
-    public static ReviewResponse toResponse(Review review) {
+    public ReviewResponse toResponse(Review review) {
         if (review == null) return null;
         return new ReviewResponse(
                 review.getMessage(),
@@ -19,7 +22,7 @@ public class ReviewMapper {
         );
     }
 
-    public static Review toEntity(ReviewRequest request, User user, RoomType roomType) {
+    public Review toEntity(ReviewRequest request, User user, RoomType roomType) {
         if (request == null) return null;
         Review review = new Review();
         review.setMessage(request.message());
