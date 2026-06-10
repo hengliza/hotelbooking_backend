@@ -3,12 +3,15 @@ package com.example.demo.service.impl;
 import com.example.demo.domain.Reservation;
 import com.example.demo.domain.Room;
 import com.example.demo.domain.User;
+import com.example.demo.dto.ReceiptRequest;
 import com.example.demo.dto.ReservationRequest;
 import com.example.demo.dto.ReservationResponse;
 import com.example.demo.mapper.ReservationMapper;
+import com.example.demo.repository.ReceiptRepository;
 import com.example.demo.repository.ReservationRepository;
 import com.example.demo.repository.RoomRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.ReceiptService;
 import com.example.demo.service.ReservationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -23,6 +26,8 @@ public class ReservationServiceImpl implements ReservationService {
     private final RoomRepository roomRepository;
     private final UserRepository userRepository;
     private final ReservationMapper reservationMapper;
+    private final ReceiptRepository receiptRepository;
+    private final ReceiptService receiptService;
 
     @Override
     public ReservationResponse createReservation(ReservationRequest reservationRequest) {
@@ -42,6 +47,9 @@ public class ReservationServiceImpl implements ReservationService {
         roomRepository.save(room);
 
         Reservation savedReservation = reservationRepository.save(reservation);
+        ReceiptRequest receiptRequest = new ReceiptRequest(savedReservation.getId());
+        receiptService.createReceipt(receiptRequest);
+
         return reservationMapper.toResponse(savedReservation);
     }
 
@@ -78,6 +86,21 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public void cancelReservation(Integer id) {
-        updateReservationStatus(id, "CANCELLED");
+        Reservation reservation = reservationRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        reservation.setStatus("CANCELLED");
+
+        if (reservation.getRoom() != null) {
+            reservation.getRoom().setStatus("AVAILABLE");
+        }
+
+        receiptRepository.findByReservationId(reservation.getId())
+                .ifPresent(receipt -> {
+                    receipt.setStatus("VOIDED");
+                    receiptRepository.save(receipt);
+                });
+
+        reservationRepository.save(reservation);
     }
 }

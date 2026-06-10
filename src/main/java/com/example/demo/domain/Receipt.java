@@ -24,4 +24,7 @@ public class Receipt {
     @OneToOne
     @JoinColumn(name = "reservation_id", nullable = false, unique = true)
     private Reservation reservation;
+
+    @Column(name = "status", nullable = false, length = 20)
+    private String status = "PAID";
 }

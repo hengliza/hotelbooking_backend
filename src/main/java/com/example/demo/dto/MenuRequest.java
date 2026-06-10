@@ -11,6 +11,6 @@ public record MenuRequest(
         String ingredients,
         Double price,
         Boolean isAvailable,
-        String category
+        Integer categoryId
 ) {
 }

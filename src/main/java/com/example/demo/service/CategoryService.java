@@ -6,9 +6,9 @@ import com.example.demo.dto.CategoryResponse;
 import java.util.List;
 
 public interface CategoryService {
-    List<CategoryResponse> findAll();
-    CategoryResponse findById(Integer id);
-    CategoryResponse save(CategoryRequest categoryRequest);
-    CategoryResponse update(CategoryRequest categoryRequest);
-    void deleteById(Integer id);
+    CategoryResponse create(CategoryRequest categoryRequest);
+    List<CategoryResponse> getAll();
+    CategoryResponse getById(Integer id);
+    CategoryResponse update(Integer id, CategoryRequest categoryRequest);
+    void delete(Integer id);
 }

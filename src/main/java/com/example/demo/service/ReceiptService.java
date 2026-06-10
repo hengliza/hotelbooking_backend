@@ -1,12 +1,14 @@
 package com.example.demo.service;
 
 import com.example.demo.domain.Receipt;
+import com.example.demo.dto.ReceiptRequest;
 import com.example.demo.dto.ReceiptResponse;
 
 import java.util.List;
 
 public interface ReceiptService {
-    List<ReceiptResponse> getReceiptsByUserId(Integer userId);
+    ReceiptResponse createReceipt(ReceiptRequest receiptRequest);
+    List<ReceiptResponse> getAllReceipts();
     ReceiptResponse getReceiptByReservationId(Integer reservationId);
-    void  deleteReceiptByReservationId(Integer reservationId);
+    ReceiptResponse deleteReceiptByReservationId(Integer reservationId);
 }

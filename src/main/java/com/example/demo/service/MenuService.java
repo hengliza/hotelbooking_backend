@@ -6,10 +6,9 @@ import com.example.demo.dto.MenuResponse;
 import java.util.List;
 
 public interface MenuService {
-    List<MenuResponse> getAllMenu();
-    MenuResponse getMenuById(Integer menuId);
-    MenuResponse getMenuByName(String menuName);
-    MenuResponse addMenu(MenuRequest menuRequest);
-    MenuResponse updateMenu(MenuRequest menuRequest);
-    void deleteMenu(Integer menuId);
+    MenuResponse create(MenuRequest menuRequest);
+    List<MenuResponse> getAll();
+    MenuResponse getById(Integer menuId);
+    MenuResponse update(Integer id,MenuRequest menuRequest);
+    void delete(Integer menuId);
 }

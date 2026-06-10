@@ -6,11 +6,10 @@ import com.example.demo.dto.ReviewResponse;
 import java.util.List;
 
 public interface ReviewService {
-    ReviewResponse addReview(ReviewRequest reviewRequest);
-    ReviewResponse getReviewByRoomTypeId(Integer roomTypeId);
-    ReviewResponse getReviewByBookingId(Integer bookingId);
-    ReviewResponse getReviewByUserId(Integer userId);
+    ReviewResponse create(ReviewRequest reviewRequest);
+    List<ReviewResponse> getReviewByRoomTypeId(Integer roomTypeId);
+    List<ReviewResponse> getReviewByUserId(Integer userId);
     List<ReviewResponse> getAllReviews();
-    ReviewResponse updateReview(ReviewRequest reviewRequest);
+    ReviewResponse updateReview(Integer id,ReviewRequest reviewRequest);
     void deleteReview(Integer reviewId);
 }
