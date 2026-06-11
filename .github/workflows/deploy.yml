@@ -22,7 +22,7 @@ jobs:
         ports:
           - 5433:5432
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U postgres"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -70,8 +70,14 @@ jobs:
             sudo docker run -d \
               --name spring-backend \
               --network web \
+              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
+              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
+              -e DATABASE_USERNAME="${{ secrets.DATABASE_USERNAME }}" \
+              -e DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" \
               -l traefik.enable=true \
               -l traefik.http.routers.spring.rule="Host(\`api-hotel-booking.molika.app\`)" \
               -l traefik.http.routers.spring.entrypoints=websecure \
               -l traefik.http.routers.spring.tls.certresolver=le \
               $IMAGE_NAME:latest
+
+
