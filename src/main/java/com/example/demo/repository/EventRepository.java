@@ -7,4 +7,5 @@ import java.util.Optional;
 
 public interface EventRepository extends JpaRepository<Event, Integer> {
     Optional<Event> findById(Integer id);
+    Boolean existsByTitle(String title);
 }

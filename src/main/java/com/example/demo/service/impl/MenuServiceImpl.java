@@ -9,7 +9,9 @@ import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.MenuRepository;
 import com.example.demo.service.MenuService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -24,10 +26,14 @@ public class MenuServiceImpl implements MenuService {
     @Override
     public MenuResponse create(MenuRequest request) {
 
+        if(menuRepository.findByName(request.name()).isPresent()){
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"This name already exists");
+        }
+
         Category category = categoryRepository.findById(
                 request.categoryId()
         ).orElseThrow(() ->
-                new RuntimeException("Category not found")
+                new ResponseStatusException(HttpStatus.NO_CONTENT,"Category not found")
         );
 
         Menu menu = menuMapper.toEntity(request, category);
@@ -50,7 +56,7 @@ public class MenuServiceImpl implements MenuService {
 
         Menu menu = menuRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Menu not found")
+                        new ResponseStatusException(HttpStatus.NO_CONTENT,"Menu not found")
                 );
 
         return menuMapper.toResponse(menu);
@@ -61,13 +67,13 @@ public class MenuServiceImpl implements MenuService {
 
         Menu menu = menuRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Menu not found")
+                        new ResponseStatusException(HttpStatus.NO_CONTENT,"Menu not found")
                 );
 
         Category category = categoryRepository.findById(
                 request.categoryId()
         ).orElseThrow(() ->
-                new RuntimeException("Category not found")
+                new ResponseStatusException(HttpStatus.NO_CONTENT,"Category not found")
         );
 
         menu.setName(request.name());

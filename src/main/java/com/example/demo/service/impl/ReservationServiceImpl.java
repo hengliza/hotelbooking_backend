@@ -14,7 +14,9 @@ import com.example.demo.repository.UserRepository;
 import com.example.demo.service.ReceiptService;
 import com.example.demo.service.ReservationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -32,14 +34,14 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public ReservationResponse createReservation(ReservationRequest reservationRequest) {
         Room room = roomRepository.findById(reservationRequest.roomId())
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + reservationRequest.roomId()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Room not found with id: " + reservationRequest.roomId()));
 
         if (!"AVAILABLE".equalsIgnoreCase(room.getStatus())) {
-            throw new IllegalStateException("Room " + room.getRoomNumber() + " is currently occupied or under maintenance.");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Room " + room.getRoomNumber() + " is currently occupied or under maintenance.");
         }
 
         User user = userRepository.findById(reservationRequest.userId())
-                .orElseThrow(() -> new RuntimeException("User not found with id: " + reservationRequest.userId()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "User not found with id: " + reservationRequest.userId()));
 
         Reservation reservation = reservationMapper.toEntity(reservationRequest, room, user);
 
@@ -68,7 +70,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public ReservationResponse updateReservationStatus(Integer id, String status) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reservation record not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Reservation record not found with id: " + id));
 
         reservation.setStatus(status.toUpperCase());
 
@@ -87,7 +89,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public void cancelReservation(Integer id) {
         Reservation reservation = reservationRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Reservation not found"));
 
         reservation.setStatus("CANCELLED");
 

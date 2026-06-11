@@ -7,7 +7,9 @@ import com.example.demo.mapper.CategoryMapper;
 import com.example.demo.repository.CategoryRepository;
 import com.example.demo.service.CategoryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -20,6 +22,10 @@ public class CategoryServiceImpl implements CategoryService {
 
     @Override
     public CategoryResponse create(CategoryRequest request) {
+        if(categoryRepository.findByName(request.name()).isPresent()){
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"This name already exists");
+        }
+
         Category category = categoryMapper.toEntity(request);
         return categoryMapper.toResponse(
                 categoryRepository.save(category)
@@ -37,7 +43,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryResponse getById(Integer id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT,"Category not found"));
 
         return categoryMapper.toResponse(category);
     }
@@ -46,7 +52,7 @@ public class CategoryServiceImpl implements CategoryService {
     public CategoryResponse update(Integer id, CategoryRequest categoryRequest) {
 
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Category not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT,"Category not found"));
 
         category.setName(categoryRequest.name());
         category.setDescription(categoryRequest.description());

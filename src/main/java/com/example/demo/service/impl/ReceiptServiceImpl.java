@@ -9,7 +9,9 @@ import com.example.demo.repository.ReceiptRepository;
 import com.example.demo.repository.ReservationRepository;
 import com.example.demo.service.ReceiptService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,10 +26,10 @@ public class ReceiptServiceImpl implements ReceiptService {
     @Override
     public ReceiptResponse createReceipt(ReceiptRequest receiptRequest) {
         Reservation reservation = reservationRepository.findById(receiptRequest.reservationId())
-                .orElseThrow(() -> new RuntimeException("Reservation not found with id: " + receiptRequest.reservationId()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Reservation not found with id: " + receiptRequest.reservationId()));
 
         if (receiptRepository.findByReservationId(receiptRequest.reservationId()).isPresent()) {
-            throw new IllegalStateException("A receipt has already been issued for Reservation ID: " + receiptRequest.reservationId());
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"A receipt has already been issued for Reservation ID: " + receiptRequest.reservationId());
         }
 
         Receipt receipt = receiptMapper.toEntity(receiptRequest, reservation);
@@ -44,14 +46,14 @@ public class ReceiptServiceImpl implements ReceiptService {
 
     @Override
     public ReceiptResponse getReceiptByReservationId(Integer reservationId) {
-        Receipt receipt = receiptRepository.findByReservationId(reservationId).orElseThrow(() -> new RuntimeException("There is no receipt with id " + reservationId));
+        Receipt receipt = receiptRepository.findByReservationId(reservationId).orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "There is no receipt with id " + reservationId));
         return receiptMapper.toResponse(receipt);
     }
 
     @Override
     public ReceiptResponse deleteReceiptByReservationId(Integer reservationId) {
         Receipt receipt = receiptRepository.findByReservationId(reservationId)
-                .orElseThrow(() -> new RuntimeException("Receipt not found for this reservation."));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Receipt not found for this reservation."));
 
         receipt.setStatus("VOIDED");
         Receipt updatedReceipt = receiptRepository.save(receipt);

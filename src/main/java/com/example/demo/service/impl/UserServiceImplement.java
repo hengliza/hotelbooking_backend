@@ -7,7 +7,9 @@ import com.example.demo.mapper.UserMapper;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,7 +22,7 @@ public class UserServiceImplement implements UserService {
 
     @Override
     public UserResponse updateUser(Integer id, UserRequest userRequest) {
-        User existedUser = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with this id"+ id));
+        User existedUser = userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "User not found with this id"+ id));
 
         existedUser.setUsername(userRequest.username());
         existedUser.setEmail(userRequest.email());
@@ -33,14 +35,14 @@ public class UserServiceImplement implements UserService {
     @Override
     public void deleteUser(Integer id) {
         if (!userRepository.existsById(id)) {
-            throw new RuntimeException("User not found with this id" +id);
+            throw new ResponseStatusException(HttpStatus.NO_CONTENT, "User not found with this id" +id);
         }
         userRepository.deleteById(id);
     }
 
     @Override
     public UserResponse getUserById(Integer id) {
-        User existedUser = userRepository.findById(id).orElseThrow(() -> new RuntimeException("User not found with this id"+ id));
+        User existedUser = userRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "User not found with this id"+ id));
 
         return userMapper.toResponse(existedUser);
     }

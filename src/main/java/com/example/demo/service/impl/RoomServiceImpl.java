@@ -10,7 +10,9 @@ import com.example.demo.repository.RoomRepository;
 import com.example.demo.repository.RoomTypeRepository;
 import com.example.demo.service.RoomService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -25,7 +27,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public RoomResponse createRoom(RoomRequest roomRequest) {
         if(roomRepository.findByRoomNumber(roomRequest.roomNumber()).isPresent()){
-            throw new RuntimeException("Room number already exists");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Room number already exists");
         }
 
         RoomType roomType = roomTypeRepository.findById(roomRequest.roomTypeId()).orElseThrow(() -> new RuntimeException("Room Type not found with id: " + roomRequest.roomTypeId()));
@@ -42,7 +44,7 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public RoomResponse getRoomByNumber(String number) {
-        Room room = roomRepository.findByRoomNumber(number).orElseThrow(() -> new RuntimeException("Room not found"));
+        Room room = roomRepository.findByRoomNumber(number).orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Room not found"));
 
         return roomMapper.toResponse(room);
     }
@@ -50,10 +52,10 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public RoomResponse updateRoom(Integer id, RoomRequest roomRequest) {
         Room existingRoom = roomRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + id));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Room not found with id: " + id));
 
         RoomType roomType = roomTypeRepository.findById(roomRequest.roomTypeId())
-                .orElseThrow(() -> new RuntimeException("Room Type not found with id: " + roomRequest.roomTypeId()));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Room Type not found with id: " + roomRequest.roomTypeId()));
 
         existingRoom.setRoomNumber(roomRequest.roomNumber());
         existingRoom.setRoomType(roomType);
@@ -69,7 +71,7 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public void deleteRoom(String number) {
         Room existingRoom = roomRepository.findByRoomNumber(number)
-                .orElseThrow(() -> new RuntimeException("Room not found with id: " + number));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Room not found with id: " + number));
         roomRepository.delete(existingRoom);
     }
 }

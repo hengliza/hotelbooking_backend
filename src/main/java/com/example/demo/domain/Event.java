@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 
 
 @Entity
@@ -25,10 +26,10 @@ public class Event {
     private String description;
 
     @Column (name = "start_date",nullable = false)
-    private Date startDate;
+    private LocalDateTime startDate;
 
     @Column (name = "end_date",nullable = false)
-    private Date endDate;
+    private LocalDateTime endDate;
 
     @Column (name = "created_at",nullable = false)
     private Timestamp createdAt;

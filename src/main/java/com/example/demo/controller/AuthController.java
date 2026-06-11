@@ -1,6 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.dto.AuthRequest;
+import com.example.demo.dto.AuthResponse;
 import com.example.demo.dto.UserRequest;
 import com.example.demo.dto.UserResponse;
 import com.example.demo.service.AuthService;
@@ -26,7 +27,7 @@ public class AuthController {
 
     @PostMapping("/login")
     @ResponseStatus(HttpStatus.OK)
-    public UserResponse login(@Valid @RequestBody AuthRequest authRequest) {
+    public AuthResponse login(@Valid @RequestBody AuthRequest authRequest) {
         return authService.loginUser(authRequest);
     }
 }

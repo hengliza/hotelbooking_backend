@@ -7,7 +7,9 @@ import com.example.demo.mapper.RoomTypeMapper;
 import com.example.demo.repository.RoomTypeRepository;
 import com.example.demo.service.RoomTypeService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -21,7 +23,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     @Override
     public RoomTypeResponse createRoomType(RoomTypeRequest roomTypeRequest) {
         if(roomTypeRepository.findByName(roomTypeRequest.name()).isPresent()){
-            throw new RuntimeException ("A room type with this name already exists");
+            throw new ResponseStatusException(HttpStatus.NO_CONTENT, "A room type with this name already exists");
         }
         RoomType roomType = roomTypeMapper.toEntity(roomTypeRequest);
 
@@ -37,13 +39,13 @@ public class RoomTypeServiceImpl implements RoomTypeService {
     @Override
     public RoomTypeResponse getRoomTypeByName(String name) {
         RoomType roomType = roomTypeRepository.findByName(name)
-                .orElseThrow(() -> new RuntimeException("There is no room type with this name"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "There is no room type with this name"));
         return roomTypeMapper.toResponse(roomType);
     }
 
     @Override
     public RoomTypeResponse updateRoomType(Integer id, RoomTypeRequest roomTypeRequest) {
-        RoomType roomType = roomTypeRepository.findById(id).orElseThrow(() -> new RuntimeException("There is no room type with this id"));
+        RoomType roomType = roomTypeRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "There is no room type with this id"));
 
         roomType.setName(roomTypeRequest.name());
         roomType.setDescription(roomTypeRequest.description());
@@ -56,7 +58,7 @@ public class RoomTypeServiceImpl implements RoomTypeService {
 
     @Override
     public void deleteRoomType(Integer id) {
-        RoomType roomType = roomTypeRepository.findById(id).orElseThrow(() -> new RuntimeException("There is no room type with this id"));
+        RoomType roomType = roomTypeRepository.findById(id).orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "There is no room type with this id"));
         roomTypeRepository.delete(roomType);
     }
 }

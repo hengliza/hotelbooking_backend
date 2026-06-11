@@ -11,7 +11,9 @@ import com.example.demo.repository.RoomTypeRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.ReviewService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -28,10 +30,10 @@ public class ReviewServiceImpl implements ReviewService {
     public ReviewResponse create(ReviewRequest request) {
 
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "User not found"));
 
         RoomType roomType = roomTypeRepository.findById(request.roomTypeId())
-                .orElseThrow(() -> new RuntimeException("Room type not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Room type not found"));
 
         Review review = reviewMapper.toEntity(
                 request,
@@ -76,7 +78,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review review = reviewRepository.findById(id)
                 .orElseThrow(() ->
-                        new RuntimeException("Review not found"));
+                        new ResponseStatusException(HttpStatus.NO_CONTENT, "Review not found"));
 
         review.setMessage(reviewRequest.message());
 
@@ -88,7 +90,7 @@ public class ReviewServiceImpl implements ReviewService {
 
         Review review = reviewRepository.findById(reviewId)
                 .orElseThrow(() ->
-                        new RuntimeException("Review not found"));
+                        new ResponseStatusException(HttpStatus.NO_CONTENT, "Review not found"));
 
         reviewRepository.delete(review);
     }

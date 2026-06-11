@@ -7,4 +7,6 @@ import java.util.Optional;
 
 public interface MenuRepository extends JpaRepository<Menu, Integer> {
     Optional<Menu> findById(Integer id);
+    Optional<Menu> findByName(String name);
 }
+
