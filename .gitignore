@@ -35,5 +35,8 @@ Thumbs.db
 # ==========================================
 # 5. Sensitive Data / Secrets (VERY IMPORTANT)
 # ==========================================
+*.env
+*.env.local
+# ==========================================
 # Un-comment the line below if you create separate files for production passwords
 # secret.properties
