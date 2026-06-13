@@ -5,6 +5,6 @@ import java.sql.Timestamp;
 public record ReceiptResponse(
         String bookingNumber,
         Timestamp issuedAt,
-        Integer reservationId,
+        ReservationResponse reservation,
         String status) {
 }

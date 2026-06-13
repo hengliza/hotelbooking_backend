@@ -30,7 +30,7 @@ public class RoomServiceImpl implements RoomService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Room number already exists");
         }
 
-        RoomType roomType = roomTypeRepository.findById(roomRequest.roomTypeId()).orElseThrow(() -> new RuntimeException("Room Type not found with id: " + roomRequest.roomTypeId()));
+        RoomType roomType = roomTypeRepository.findById(roomRequest.roomTypeId()).orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,"Room Type not found with id: " + roomRequest.roomTypeId()));
         Room room= roomMapper.toEntity(roomRequest, roomType);
 
         return roomMapper.toResponse(roomRepository.save(room));

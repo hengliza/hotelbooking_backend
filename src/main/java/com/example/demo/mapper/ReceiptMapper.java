@@ -4,20 +4,24 @@ import com.example.demo.domain.Receipt;
 import com.example.demo.domain.Reservation;
 import com.example.demo.dto.ReceiptRequest;
 import com.example.demo.dto.ReceiptResponse;
+import com.example.demo.dto.RoomResponse;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import java.sql.Timestamp;
 import java.util.UUID;
 
 @Component
+@RequiredArgsConstructor
 public class ReceiptMapper {
+    private final ReservationMapper reservationMapper;
 
     public ReceiptResponse toResponse(Receipt receipt) {
         if (receipt == null) return null;
         return new ReceiptResponse(
                 receipt.getBookingNumber(),
                 receipt.getIssuedAt(),
-                receipt.getReservation() != null ? receipt.getReservation().getId() : null,
+                reservationMapper.toResponse(receipt.getReservation()),
                 receipt.getStatus()
         );
     }

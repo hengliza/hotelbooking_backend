@@ -28,10 +28,10 @@ jobs:
           --health-retries 5
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6.0.3
       
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5.2.0
         with:
           java-version: '21'
           distribution: 'temurin'
@@ -54,42 +54,66 @@ jobs:
         run: |
           docker push $IMAGE_NAME:latest
 
+      - name: Clean remote k8s target
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            rm -rf /tmp/spring-backend
+
       - name: Copy k8s manifests
         uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "k8s/deployment.yaml"
+          source: "k8s"
           target: "/tmp/spring-backend"
 
       - name: Deploy Server
         uses: appleboy/ssh-action@v1
-        env:
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
-          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
-          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          envs: JWT_SECRET,DATABASE_URL,DATABASE_USERNAME,DATABASE_PASSWORD,DOCKERHUB_USERNAME
           script: |
-            IMAGE_NAME=$DOCKERHUB_USERNAME/hotel-booking-backend:latest
+            IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/hotel-booking-backend:latest
             
             # Replace placeholder with actual image name
             sed -i "s|REPOSITORY/IMAGE_NAME:TAG|$IMAGE_NAME|g" /tmp/spring-backend/k8s/deployment.yaml
             
-            # Create or update Kubernetes secret safely
-            sudo /usr/local/bin/kubectl create secret generic backend-secrets \
-              --from-literal=JWT_SECRET="$JWT_SECRET" \
-              --from-literal=DATABASE_URL="$DATABASE_URL" \
-              --from-literal=DATABASE_USERNAME="$DATABASE_USERNAME" \
-              --from-literal=DATABASE_PASSWORD="$DATABASE_PASSWORD" \
-              --dry-run=client -o yaml | sudo /usr/local/bin/kubectl apply -f -
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
             
-            # Apply to Kubernetes cluster
-            sudo /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/deployment.yaml
-
+            kubectl create namespace hotel-booking \
+              --dry-run=client -o yaml | kubectl apply -f -
+            
+            # Create Kubernetes Secret for Docker Hub so it can pull your private image
+            kubectl create secret docker-registry regcred \
+              --docker-server=https://index.docker.io/v1/ \
+              --docker-username=${{ secrets.DOCKERHUB_USERNAME }} \
+              --docker-password=${{ secrets.DOCKERHUB_TOKEN }} \
+              --docker-email=devops@example.com \
+              -n hotel-booking \
+              --dry-run=client -o yaml | kubectl apply -f -
+            
+            # Create/update backend runtime environment secrets
+            kubectl create secret generic backend-env \
+              --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}' \
+              --from-literal=DATABASE_URL='${{ secrets.DATABASE_URL }}' \
+              --from-literal=DATABASE_USERNAME='${{ secrets.DATABASE_USERNAME }}' \
+              --from-literal=DATABASE_PASSWORD='${{ secrets.DATABASE_PASSWORD }}' \
+              -n hotel-booking \
+              --dry-run=client -o yaml | kubectl apply -f -
+              
+            # Apply shared resources, then replace the Deployment exactly so old container specs cannot linger
+            /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/service.yaml
+            /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/ingress.yaml
+            /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/redirect-https.yaml
+            if /usr/local/bin/kubectl get deployment spring-backend -n hotel-booking >/dev/null 2>&1; then
+              /usr/local/bin/kubectl replace -f /tmp/spring-backend/k8s/deployment.yaml
+            else
+              /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/deployment.yaml
+            fi
+            /usr/local/bin/kubectl rollout status deployment/spring-backend -n hotel-booking --timeout=120s

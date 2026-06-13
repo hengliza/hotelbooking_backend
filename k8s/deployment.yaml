@@ -2,10 +2,16 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: spring-backend
+  namespace: hotel-booking
   labels:
     app: spring-backend
 spec:
-  replicas: 1
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
   selector:
     matchLabels:
       app: spring-backend
@@ -14,44 +20,47 @@ spec:
       labels:
         app: spring-backend
     spec:
+      imagePullSecrets:
+        - name: regcred
       containers:
         - name: spring-backend
           image: REPOSITORY/IMAGE_NAME:TAG
           ports:
             - containerPort: 8080
-          envFrom:
-            - secretRef:
-                name: backend-secrets
           imagePullPolicy: Always
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: spring-backend
-spec:
-  selector:
-    app: spring-backend
-  ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 8080
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: spring-backend
-  annotations:
-    traefik.ingress.kubernetes.io/router.tls.certresolver: "le"
-    traefik.ingress.kubernetes.io/router.entrypoints: "websecure"
-spec:
-  rules:
-    - host: api-hotel-booking.molika.app
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: spring-backend
-                port:
-                  number: 80
+          startupProbe:
+            tcpSocket:
+              port: 8080
+            failureThreshold: 30
+            periodSeconds: 5
+          readinessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket:
+              port: 8080
+            initialDelaySeconds: 60
+            periodSeconds: 20
+          env:
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: backend-env
+                  key: JWT_SECRET
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: backend-env
+                  key: DATABASE_URL
+            - name: DATABASE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: backend-env
+                  key: DATABASE_USERNAME
+            - name: DATABASE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: backend-env
+                  key: DATABASE_PASSWORD
