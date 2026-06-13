@@ -54,30 +54,42 @@ jobs:
         run: |
           docker push $IMAGE_NAME:latest
 
-      - name: Deploy Server
-        uses: appleboy/ssh-action@v1
+      - name: Copy k8s manifests
+        uses: appleboy/scp-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "k8s/deployment.yaml"
+          target: "/tmp/spring-backend"
+
+      - name: Deploy Server
+        uses: appleboy/ssh-action@v1
+        env:
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DATABASE_USERNAME: ${{ secrets.DATABASE_USERNAME }}
+          DATABASE_PASSWORD: ${{ secrets.DATABASE_PASSWORD }}
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          envs: JWT_SECRET,DATABASE_URL,DATABASE_USERNAME,DATABASE_PASSWORD,DOCKERHUB_USERNAME
           script: |
-            IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/hotel-booking-backend
-
-            sudo docker pull $IMAGE_NAME:latest
-
-            sudo docker rm -f spring-backend || true
-
-            sudo docker run -d \
-              --name spring-backend \
-              --network web \
-              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-              -e DATABASE_USERNAME="${{ secrets.DATABASE_USERNAME }}" \
-              -e DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" \
-              -l traefik.enable=true \
-              -l traefik.http.routers.spring.rule="Host(\`api-hotel-booking.molika.app\`)" \
-              -l traefik.http.routers.spring.entrypoints=websecure \
-              -l traefik.http.routers.spring.tls.certresolver=le \
-              $IMAGE_NAME:latest
-
+            IMAGE_NAME=$DOCKERHUB_USERNAME/hotel-booking-backend:latest
+            
+            # Replace placeholder with actual image name
+            sed -i "s|REPOSITORY/IMAGE_NAME:TAG|$IMAGE_NAME|g" /tmp/spring-backend/k8s/deployment.yaml
+            
+            # Create or update Kubernetes secret safely
+            sudo /usr/local/bin/kubectl create secret generic backend-secrets \
+              --from-literal=JWT_SECRET="$JWT_SECRET" \
+              --from-literal=DATABASE_URL="$DATABASE_URL" \
+              --from-literal=DATABASE_USERNAME="$DATABASE_USERNAME" \
+              --from-literal=DATABASE_PASSWORD="$DATABASE_PASSWORD" \
+              --dry-run=client -o yaml | sudo /usr/local/bin/kubectl apply -f -
+            
+            # Apply to Kubernetes cluster
+            sudo /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/deployment.yaml
 
