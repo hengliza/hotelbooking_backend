@@ -12,6 +12,7 @@ public record ReservationResponse(
         Integer childAmount,
         String status,
         Timestamp createdDate,
+        Double totalPrice,
         RoomResponse room
 ) {
 }

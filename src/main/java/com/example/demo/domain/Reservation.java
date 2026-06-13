@@ -34,6 +34,9 @@ public class Reservation {
     @Column(name = "created_date",nullable = false)
     private Timestamp createdDate;
 
+    @Column(name = "total_price", nullable = false)
+    private Double totalPrice;
+
     @ManyToOne
     @JoinColumn(name = "room_id", nullable = false, referencedColumnName = "id")
     private Room room;

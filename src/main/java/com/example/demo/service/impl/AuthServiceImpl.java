@@ -1,11 +1,10 @@
 package com.example.demo.service.impl;
 
+import com.example.demo.domain.RefreshToken;
 import com.example.demo.domain.User;
-import com.example.demo.dto.AuthRequest;
-import com.example.demo.dto.AuthResponse;
-import com.example.demo.dto.UserRequest;
-import com.example.demo.dto.UserResponse;
+import com.example.demo.dto.*;
 import com.example.demo.mapper.UserMapper;
+import com.example.demo.repository.RefreshTokenRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.security.JwtService;
 import com.example.demo.service.AuthService;
@@ -18,152 +17,255 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
-@Service
 @RequiredArgsConstructor
+@Service
+@Transactional
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final JwtService jwtService;
     private final PasswordEncoder passwordEncoder;
+    private final RefreshTokenRepository refreshTokenRepository;
+    private final RefreshServiceImpl refreshTokenService;
 
-    // ---------------- REGISTER ----------------
-    @Transactional
     @Override
-    public UserResponse registerUser(UserRequest request) {
+    public AuthResponse registerUser(UserRequest request) {
 
         String provider = request.authProvider().toUpperCase();
 
-        if ("LOCAL".equals(provider)) {
-            validateLocalRegister(request);
+        User user;
 
-            User user = userMapper.toEntity(request);
-            user.setPassword(
-                    passwordEncoder.encode(user.getPassword())
+        switch (provider) {
+
+            case "LOCAL" -> {
+
+                validateLocalRegister(request);
+
+                user = userMapper.toEntity(request);
+
+                user.setPassword(
+                        passwordEncoder.encode(
+                                user.getPassword()
+                        )
+                );
+
+                user.setAuthProvider("LOCAL");
+
+                user = userRepository.save(user);
+
+                return buildAuthResponse(user);
+            }
+
+            case "GOOGLE" -> {
+
+                validateGoogleRegister(request);
+
+                user = userMapper.toEntity(request);
+
+                user.setAuthProvider("GOOGLE");
+                user.setPassword(null);
+
+                user = userRepository.save(user);
+
+                return buildAuthResponse(user);
+            }
+
+            default -> throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Unknown Authentication Provider: " + provider
             );
-            user.setAuthProvider("LOCAL");
-
-            return userMapper.toResponse(userRepository.save(user));
         }
-
-        if ("GOOGLE".equals(provider)) {
-            validateGoogleRegister(request);
-
-            User user = userMapper.toEntity(request);
-            user.setAuthProvider("GOOGLE");
-            user.setPassword(null);
-
-            return userMapper.toResponse(userRepository.save(user));
-        }
-
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Unknown Authentication Provider: " + provider);
     }
 
-    // ---------------- LOGIN ----------------
-    @Transactional
     @Override
     public AuthResponse loginUser(AuthRequest request) {
 
         String provider = request.authProvider().toUpperCase();
 
-        if ("LOCAL".equals(provider)) {
-            return loginLocal(request);
-        }
+        return switch (provider) {
 
-        if ("GOOGLE".equals(provider)) {
-            return loginGoogle(request);
-        }
+            case "LOCAL" -> loginLocal(request);
 
-        throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid Authentication Provider.");
+            case "GOOGLE" -> loginGoogle(request);
+
+            default -> throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid Authentication Provider."
+            );
+        };
     }
 
-    // ---------------- LOCAL LOGIN ----------------
     private AuthResponse loginLocal(AuthRequest request) {
 
-        User user = userRepository.findByPhoneNumber(request.phoneNumber())
+        User user = userRepository
+                .findByPhoneNumber(request.phoneNumber())
                 .orElseThrow(() ->
-                        new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid phone number or password.")
+                        new ResponseStatusException(
+                                HttpStatus.BAD_REQUEST,
+                                "Invalid phone number or password."
+                        )
                 );
 
         if (!"LOCAL".equals(user.getAuthProvider())) {
-            throw new IllegalStateException(
-                    "This account uses Google Sign-In. Please log in with Google."
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "This account uses Google Sign-In."
             );
         }
 
-        if (!passwordEncoder.matches(request.password(), user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Invalid phone number or password.");
+        if (!passwordEncoder.matches(
+                request.password(),
+                user.getPassword()
+        )) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid phone number or password."
+            );
         }
 
         return buildAuthResponse(user);
     }
 
-    // ---------------- GOOGLE LOGIN ----------------
     private AuthResponse loginGoogle(AuthRequest request) {
 
-        Optional<User> existingUser =
-                userRepository.findByEmail(request.email());
+        User user = userRepository
+                .findByEmail(request.email())
+                .orElseGet(() -> {
 
-        User user;
+                    User newUser = new User();
 
-        if (existingUser.isPresent()) {
+                    newUser.setUsername(
+                            request.email().split("@")[0]
+                    );
 
-            user = existingUser.get();
+                    newUser.setEmail(request.email());
+                    newUser.setAuthProvider("GOOGLE");
 
-            if (!"GOOGLE".equals(user.getAuthProvider())) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "Email already linked to local account. Use phone login."
-                );
-            }
+                    return userRepository.save(newUser);
+                });
 
-        } else {
+        if (!"GOOGLE".equals(user.getAuthProvider())) {
 
-            user = new User();
-            user.setUsername(request.email().split("@")[0]);
-            user.setEmail(request.email());
-            user.setAuthProvider("GOOGLE");
-
-            user = userRepository.save(user);
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Email already linked to local account."
+            );
         }
 
         return buildAuthResponse(user);
     }
 
-    // ---------------- JWT RESPONSE ----------------
-    private AuthResponse buildAuthResponse(User user) {
+    @Override
+    public AuthResponse refreshToken(RefreshRequest request) {
+        RefreshToken refreshToken =
+                refreshTokenService.validateRefreshToken(
+                        request.refreshToken()
+                );
 
-        String token = jwtService.generateToken(user.getUsername());
+        User user = refreshToken.getUser();
+
+        String accessToken =
+                jwtService.generateToken(
+                        user.getUsername()
+                );
 
         return new AuthResponse(
-                token,
+                accessToken,
+                request.refreshToken(),
                 userMapper.toResponse(user)
         );
     }
 
-    // ---------------- VALIDATIONS ----------------
-    private void validateLocalRegister(UserRequest request) {
+    @Override
+    public void logout(String username) {
 
-        if (request.phoneNumber() == null || request.phoneNumber().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Phone number is required.");
+        User user = userRepository
+                .findByUsername(username)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "User not found"
+                        )
+                );
+
+        refreshTokenService.deleteByUser(user);
+    }
+
+    private AuthResponse buildAuthResponse(User user) {
+
+        String accessToken =
+                jwtService.generateToken(
+                        user.getUsername()
+                );
+
+        String refreshToken =
+                refreshTokenService.createRefreshToken(
+                        user
+                );
+
+        return new AuthResponse(
+                accessToken,
+                refreshToken,
+                userMapper.toResponse(user)
+        );
+    }
+
+    private void validateLocalRegister(
+            UserRequest request
+    ) {
+
+        if (request.phoneNumber() == null
+                || request.phoneNumber().isBlank()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Phone number is required."
+            );
         }
 
-        if (request.password() == null || request.password().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Password is required.");
+        if (request.password() == null
+                || request.password().isBlank()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Password is required."
+            );
         }
 
-        if (userRepository.existsByPhoneNumber(request.phoneNumber())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,"Phone number already registered.");
+        if (userRepository.existsByPhoneNumber(
+                request.phoneNumber()
+        )) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Phone number already registered."
+            );
         }
     }
 
-    private void validateGoogleRegister(UserRequest request) {
+    private void validateGoogleRegister(
+            UserRequest request
+    ) {
 
-        if (request.email() == null || request.email().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"Google email is required.");
+        if (request.email() == null
+                || request.email().isBlank()) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Google email is required."
+            );
         }
 
-        if (userRepository.existsByEmail(request.email())) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,"Google account already registered.");
+        if (userRepository.existsByEmail(
+                request.email()
+        )) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Google account already registered."
+            );
         }
     }
 }

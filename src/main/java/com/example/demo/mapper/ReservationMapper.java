@@ -24,6 +24,7 @@ public class ReservationMapper {
                 reservation.getChildAmount(),
                 reservation.getStatus(),
                 reservation.getCreatedDate(),
+                reservation.getTotalPrice(),
                 roomMapper.toResponse(reservation.getRoom())
         );
     }
@@ -35,6 +36,7 @@ public class ReservationMapper {
         reservation.setCheckoutDate(request.checkoutDate());
         reservation.setAdultAmount(request.adultAmount());
         reservation.setChildAmount(request.childAmount());
+        reservation.setTotalPrice(room.getRoomType().getPrice());
         reservation.setRoom(room);
         reservation.setUser(user);
         reservation.setStatus("PENDING"); // Default business status setup
