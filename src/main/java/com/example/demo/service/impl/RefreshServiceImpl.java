@@ -18,6 +18,7 @@ public class RefreshServiceImpl implements RefreshService {
     @Override
     public String createRefreshToken(User user) {
         refreshTokenRepository.deleteByUser(user);
+        refreshTokenRepository.flush();
 
         String token = UUID.randomUUID().toString();
 
