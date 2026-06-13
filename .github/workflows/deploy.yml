@@ -54,6 +54,15 @@ jobs:
         run: |
           docker push $IMAGE_NAME:latest
 
+      - name: Copy k8s manifests
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "k8s"
+          target: "/tmp/spring-backend"
+
       - name: Deploy Server
         uses: appleboy/ssh-action@v1
         with:
@@ -61,23 +70,35 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/hotel-booking-backend
-
-            sudo docker pull $IMAGE_NAME:latest
-
-            sudo docker rm -f spring-backend || true
-
-            sudo docker run -d \
-              --name spring-backend \
-              --network web \
-              -e JWT_SECRET="${{ secrets.JWT_SECRET }}" \
-              -e DATABASE_URL="${{ secrets.DATABASE_URL }}" \
-              -e DATABASE_USERNAME="${{ secrets.DATABASE_USERNAME }}" \
-              -e DATABASE_PASSWORD="${{ secrets.DATABASE_PASSWORD }}" \
-              -l traefik.enable=true \
-              -l traefik.http.routers.spring.rule="Host(\`api-hotel-booking.molika.app\`)" \
-              -l traefik.http.routers.spring.entrypoints=websecure \
-              -l traefik.http.routers.spring.tls.certresolver=le \
-              $IMAGE_NAME:latest
-
+            IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/hotel-booking-backend:latest
+            
+            # Replace placeholder with actual image name
+            sed -i "s|REPOSITORY/IMAGE_NAME:TAG|$IMAGE_NAME|g" /tmp/spring-backend/k8s/deployment.yaml
+            
+            export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+            
+            kubectl create namespace hotel-booking \
+              --dry-run=client -o yaml | kubectl apply -f -
+            
+            # Create Kubernetes Secret for Docker Hub so it can pull your private image
+            kubectl create secret docker-registry regcred \
+              --docker-server=https://index.docker.io/v1/ \
+              --docker-username=${{ secrets.DOCKERHUB_USERNAME }} \
+              --docker-password=${{ secrets.DOCKERHUB_TOKEN }} \
+              --docker-email=devops@example.com \
+              -n hotel-booking \
+              --dry-run=client -o yaml | kubectl apply -f -
+            
+            # Create/update backend runtime environment secrets
+            kubectl create secret generic backend-env \
+              --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}' \
+              --from-literal=DATABASE_URL='${{ secrets.DATABASE_URL }}' \
+              --from-literal=DATABASE_USERNAME='${{ secrets.DATABASE_USERNAME }}' \
+              --from-literal=DATABASE_PASSWORD='${{ secrets.DATABASE_PASSWORD }}' \
+              -n hotel-booking \
+              --dry-run=client -o yaml | kubectl apply -f -
+              
+            # Apply to Kubernetes cluster
+            /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/
+            /usr/local/bin/kubectl rollout status deployment/spring-backend -n hotel-booking --timeout=120s
 
