@@ -29,10 +29,10 @@ public class ReviewServiceImpl implements ReviewService {
     @Override
     public ReviewResponse create(ReviewRequest request) {
 
-        User user = userRepository.findById(request.userId())
+        User user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "User not found"));
 
-        RoomType roomType = roomTypeRepository.findById(request.roomTypeId())
+        RoomType roomType = roomTypeRepository.findByName(request.roomTypeName())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NO_CONTENT, "Room type not found"));
 
         Review review = reviewMapper.toEntity(
