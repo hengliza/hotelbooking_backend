@@ -15,6 +15,7 @@ public class MenuMapper {
     public MenuResponse toResponse(Menu menu) {
         if (menu == null) return null;
         return new MenuResponse(
+                menu.getId(),
                 menu.getName(),
                 menu.getDescription(),
                 menu.getIngredients(),

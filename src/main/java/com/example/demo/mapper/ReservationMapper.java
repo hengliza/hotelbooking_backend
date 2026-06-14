@@ -18,6 +18,7 @@ public class ReservationMapper {
     public ReservationResponse toResponse(Reservation reservation) {
         if (reservation == null) return null;
         return new ReservationResponse(
+                reservation.getId(),
                 reservation.getCheckinDate(),
                 reservation.getCheckoutDate(),
                 reservation.getAdultAmount(),

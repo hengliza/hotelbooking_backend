@@ -15,6 +15,7 @@ public class ReviewMapper {
     public ReviewResponse toResponse(Review review) {
         if (review == null) return null;
         return new ReviewResponse(
+                review.getId(),
                 review.getMessage(),
                 review.getCreatedDate(),
                 review.getUser() != null ? review.getUser().getUsername() : "Anonymous",

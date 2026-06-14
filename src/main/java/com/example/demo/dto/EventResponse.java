@@ -5,6 +5,7 @@ import java.sql.Timestamp;
 import java.time.LocalDateTime;
 
 public record EventResponse(
+        Integer id,
         String title,
         String description,
         LocalDateTime startDate,

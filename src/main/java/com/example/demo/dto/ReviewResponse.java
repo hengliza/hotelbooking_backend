@@ -6,6 +6,7 @@ import com.example.demo.domain.User;
 import java.sql.Timestamp;
 
 public record ReviewResponse(
+        Integer id,
         String message,
         Timestamp createdDate,
         String username,

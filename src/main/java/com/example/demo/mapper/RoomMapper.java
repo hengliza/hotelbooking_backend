@@ -17,6 +17,7 @@ public class RoomMapper {
         if (room == null) return null;
 
         return new RoomResponse(
+                room.getId(),
                 room.getRoomNumber(),
                 roomTypeMapper.toResponse(room.getRoomType()),
                 room.getStatus()

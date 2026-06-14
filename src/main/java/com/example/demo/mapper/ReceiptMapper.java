@@ -19,6 +19,7 @@ public class ReceiptMapper {
     public ReceiptResponse toResponse(Receipt receipt) {
         if (receipt == null) return null;
         return new ReceiptResponse(
+                receipt.getId(),
                 receipt.getBookingNumber(),
                 receipt.getIssuedAt(),
                 reservationMapper.toResponse(receipt.getReservation()),

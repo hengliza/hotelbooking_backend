@@ -6,6 +6,7 @@ import com.example.demo.domain.Room;
 import java.sql.Timestamp;
 
 public record ReservationResponse(
+        Integer id,
         Timestamp checkinDate,
         Timestamp checkoutDate,
         Integer adultAmount,

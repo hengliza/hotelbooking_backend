@@ -13,6 +13,7 @@ public class EventMapper {
     public EventResponse toResponse(Event event) {
         if (event == null) return null;
         return new EventResponse(
+                event.getId(),
                 event.getTitle(),
                 event.getDescription(),
                 event.getStartDate(),

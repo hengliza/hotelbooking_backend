@@ -11,6 +11,7 @@ public class UserMapper {
     public UserResponse toResponse(User user) {
         if (user == null) return null;
         return new UserResponse(
+                user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 user.getPhoneNumber()
