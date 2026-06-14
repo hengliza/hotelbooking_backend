@@ -113,6 +113,7 @@ jobs:
             /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/redirect-https.yaml
             if /usr/local/bin/kubectl get deployment spring-backend -n hotel-booking >/dev/null 2>&1; then
               /usr/local/bin/kubectl replace -f /tmp/spring-backend/k8s/deployment.yaml
+              /usr/local/bin/kubectl rollout restart deployment spring-backend -n hotel-booking
             else
               /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/deployment.yaml
             fi
