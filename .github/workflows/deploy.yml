@@ -79,25 +79,13 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            set -e
             IMAGE_NAME=${{ secrets.DOCKERHUB_USERNAME }}/hotel-booking-backend:latest
             
             # Replace placeholder with actual image name
             sed -i "s|REPOSITORY/IMAGE_NAME:TAG|$IMAGE_NAME|g" /tmp/spring-backend/k8s/deployment.yaml
             
             export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
-            
-            kubectl create namespace hotel-booking \
-              --dry-run=client -o yaml | kubectl apply -f -
-            
-            # Create Kubernetes Secret for Docker Hub so it can pull your private image
-            kubectl create secret docker-registry regcred \
-              --docker-server=https://index.docker.io/v1/ \
-              --docker-username=${{ secrets.DOCKERHUB_USERNAME }} \
-              --docker-password=${{ secrets.DOCKERHUB_TOKEN }} \
-              --docker-email=devops@example.com \
-              -n hotel-booking \
-              --dry-run=client -o yaml | kubectl apply -f -
-            
             # Create/update backend runtime environment secrets
             kubectl create secret generic backend-env \
               --from-literal=JWT_SECRET='${{ secrets.JWT_SECRET }}' \
@@ -113,6 +101,7 @@ jobs:
             /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/redirect-https.yaml
             if /usr/local/bin/kubectl get deployment spring-backend -n hotel-booking >/dev/null 2>&1; then
               /usr/local/bin/kubectl replace -f /tmp/spring-backend/k8s/deployment.yaml
+              /usr/local/bin/kubectl rollout restart deployment spring-backend -n hotel-booking
             else
               /usr/local/bin/kubectl apply -f /tmp/spring-backend/k8s/deployment.yaml
             fi
